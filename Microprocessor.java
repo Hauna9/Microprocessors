@@ -168,6 +168,7 @@ public class Microprocessor {
                 case ADD: case SUB: case ADDI: case SUBI: case BNEZ:  //FIXME bnez here?
                     Adder[position].busy = 1;
                     Adder[position].instructionType = instruction.instructionType;
+                    //TODO check they are available, and put in the correct place
                     Adder[position].vj = instruction.j;
                     Adder[position].vk = instruction.k;
                     Adder[position].qj = instruction.j;
@@ -204,7 +205,7 @@ public class Microprocessor {
             Scanner myReader = new Scanner(myObj);
             while (myReader.hasNextLine()) {
               String data = myReader.nextLine();
-              String[] words = data.split("\\s+");
+              String[] words = data.split("[,\\s]+");
               Instruction instruction = new Instruction(words);
               instructions.add(instruction);
             }
