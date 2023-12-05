@@ -8,10 +8,11 @@ public class ReservationStation {
     String qj;
     String qk;
     String A;
-    int tag; //FIXME make this tag a string?
+    String tag; //FIXME make this tag a string?
+    boolean readyToWrite;
 
-    public ReservationStation() {
-        this.startCycle = 0;
+    public ReservationStation(String tagCharacter) {
+        this.startCycle = -1; //FIXME is this needed?
         this.busy = 0;
         this.instructionType = null;
         this.vj = "";
@@ -19,7 +20,8 @@ public class ReservationStation {
         this.qj = "";
         this.qk = "";
         this.A = "";
-        this.tag = 0;
+        this.tag = tagCharacter;
+        this.readyToWrite = false;
     }
 
 

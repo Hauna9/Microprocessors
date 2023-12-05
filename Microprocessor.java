@@ -29,10 +29,6 @@ issue
          
        TODO go through vod 12 and 13 for load and store buffers, and the loop examples
 
-       wed: write it what i wrote here ^^
-       2)main methods 
-       3) prints
-       4) write some test cases (basic)
 
 
     
@@ -47,28 +43,53 @@ import java.io.*;
 public class Microprocessor {
 
     static Queue<Instruction> instructions;
-     static Queue<Instruction> currentInstructions; //got issued
+    static Queue<Instruction> instructionsToWrite; //got issued
     static int clockCycle = 0;
     static ReservationStation[] Adder;
     static ReservationStation[] Multiplier;
     static Buffer[] Load;
     static Buffer[] Store;
-    static int[] RegisterFile; // reg number is the position;//FIXME make it even? and value , default is 0
+    static RegisterFile[] RegisterFile; // reg number is the position;//FIXME make it even? and value , default is 0
     static CommonDataBus CDB; // one value has tag, the other has the actual value
+    static float[] Memory;
 
-   public Microprocessor(int adderSize, int multiplierSize, int loadSize, int storeSize, int registerSize)
+   public Microprocessor(int adderSize, int multiplierSize, int loadSize, int storeSize, int registerSize, int memorySize)
    {
     instructions= new LinkedList<>();
     Adder = new ReservationStation[adderSize];
+    populateReservationStation(Adder, "A");
     Multiplier = new ReservationStation[multiplierSize];
+    populateReservationStation(Multiplier, "M");
     Load = new Buffer[loadSize];
+    populateBuffer(Load, "L");
     Store = new Buffer[storeSize];
-    RegisterFile = new int[registerSize];
+    populateBuffer(Store, "S");
+    RegisterFile = new RegisterFile[registerSize];
     CDB = new CommonDataBus(); //FIXME do the constructor
+    Memory = new int[memorySize];
+    
 
    }
 
-   public static void checkCleanup(){
+    public static void populateReservationStation(ReservationStation[] reservationStation, String tagCharacter)
+    {
+         for(int i=0; i<reservationStation.length; i++)
+         {
+            // makes every position have the correct tag; m1 m2 m3 etc
+              reservationStation[i] = new ReservationStation(tagCharacter+ (i+1));
+         }
+    }
+
+    public static void populateBuffer(Buffer[] buffer, String tagCharacter)
+    {
+         for(int i=0; i<buffer.length; i++)
+         {
+             // makes every position have the correct tag; L1 L2 L3 etc
+              buffer[i] = new Buffer(tagCharacter + (i+1));
+         }
+    }
+    
+    public static void checkCleanup(){
     //go thro the instructions getting executed rn and update stuff according yto cycke
     //if it is done, we remove it from the reservation station call method emptyBuffer, and remove from the instruction queue
 
@@ -76,43 +97,351 @@ public class Microprocessor {
    }
 
    public static void issue(Instruction instruction){
-    //check if instruction is valid
-    //check if buffer is full
-    //check if there is empty reservation station
-    //check if there is empty register file
-    //check if there is empty load buffer
-    //check if there is empty store buffer
-    //check if there is empty CDB
-    //check if there is empty instruction queue
-    //check if there is empty current instruction queue
-    //check if there is empty instruction queue
-    //check if there is empty instruction queue
-    //check if there is empty instruction
-
+    if (instruction.issued==false)
+  {
     //Available reservation station
      if(reservationStation(instruction) != -1)
      {
-        issueInstruction(instruction);    
-        
-            
+        issueInstruction(instruction);        
      } 
-      //check if the reservation station for that intruction has empty space... if it does, we issue it
+   }
+}
 
-         // if(Adder[i].busy == false)
-                    // {
-                    //     Adder[i].busy = true;
-                    //     Adder[i].instruction = instruction;
-                    //     Adder[i].Qj = instruction.j;
-                    //     Adder[i].Qk = instruction.k;
-                    //     Adder[i].Vj = RegisterFile[instruction.j];
-                    //     Adder[i].Vk = RegisterFile[instruction.k];
-                    //     Adder[i].A = instruction.j + instruction.k;
-                    //     Adder[i].instructionNumber = instruction.instructionNumber;
-                    //     Adder[i].issueCycle = clockCycle;
-                    //     instruction.issued = true;
-                    //     instruction.issueCycle = clockCycle;
-                    //     break;
-                    // }
+   public static void execute(Instruction instruction){
+
+    if(!instruction.executed) //check instruction has not been executed
+    {
+        if(instruction.executeStartCycle == -1) //execution has not started
+       { if(canExecute(instruction))
+        {
+            //start execution
+            instruction.executeStartCycle = clockCycle;
+            startExecute(instruction);
+        }
+         }
+    else{
+            instruction.duration--;
+        if(instruction.duration == 0)
+        {
+            instruction.executed = true;
+            instruction.executeEndCycle = clockCycle;
+            executeInstruction(instruction);
+            if(instruction.instructionType != InstructionType.SD)
+                {
+                    //instructionsToWrite.add(instruction);
+                    emptyBuffer(Store, instruction.position);
+                    instruction.written = true;
+                }
+
+        }
+        }
+    
+        
+    }   
+
+    }
+
+    public static void startExecute(Instruction instruction)
+    {
+        switch(instruction.instructionType)
+        {
+            //FIXME bnez??
+            case ADD: case SUB: case ADDI: case SUBI: case BNEZ:  //FIXME bnez here?
+                Adder[instruction.position].startCycle = clockCycle;
+                break;
+            case MUL: case DIV: 
+                Multiplier[instruction.position].startCycle = clockCycle;
+                break;
+            case LD:
+                Load[instruction.position].startCycle = clockCycle;
+                break;
+            case SD:
+                Store[instruction.position].startCycle = clockCycle;
+                break;
+            default: 
+                break;
+        }
+    }
+
+   public static boolean canExecute(Instruction instruction)
+   {
+         switch(instruction.instructionType)
+         {
+              case ADD: case SUB:   //FIXME bnez here?
+                return Adder[instruction.position].qj=="" && Adder[instruction.position].qk=="";
+              case ADDI: case SUBI: 
+                return Adder[instruction.position].qj==""; //immediate is always available
+              case MUL: case DIV: 
+                return Multiplier[instruction.position].qj=="" && Multiplier[instruction.position].qk=="";
+              case LD:
+                return true;
+              case SD:
+                return RegisterFile[instruction.destinationRegister].busy==0; //FIXME check this
+              case BNEZ: //FIXME
+               // return canExecuteBNEZ(instruction);
+              default: return false;
+                    
+                }
+                
+         }
+   
+   public static void executeInstruction(Instruction instruction)
+   {
+        switch(instruction.instructionType)
+        {
+            case ADD:   //FIXME bnez here?
+                instruction.result = Float.parseFloat(Adder[instruction.position].vj) + Float.parseFloat(Adder[instruction.position].vk);
+                Adder[instruction.position].readyToWrite = true;
+                break;
+            case SUB: 
+                instruction.result = Float.parseFloat(Adder[instruction.position].vj) - Float.parseFloat(Adder[instruction.position].vk);
+                Adder[instruction.position].readyToWrite = true;
+                break;
+            case ADDI:
+                instruction.result = Float.parseFloat(Adder[instruction.position].vj) + instruction.immediate;
+                Adder[instruction.position].readyToWrite = true;
+                break;
+            case SUBI:
+                instruction.result = Float.parseFloat(Adder[instruction.position].vj) - instruction.immediate;
+                Adder[instruction.position].readyToWrite = true;
+                break; 
+            case BNEZ: //TODO bnez??
+            break;
+            case MUL:
+                instruction.result = Float.parseFloat(Multiplier[instruction.position].vj) * Float.parseFloat(Multiplier[instruction.position].vk);
+                Multiplier[instruction.position].readyToWrite = true;
+                break;
+            case DIV: 
+                instruction.result = Float.parseFloat(Multiplier[instruction.position].vj) / Float.parseFloat(Multiplier[instruction.position].vk);
+                Multiplier[instruction.position].readyToWrite = true;
+                break;
+            case LD: //FIXME this is in writeback
+               // RegisterFile[instruction.destinationRegister].value = Memory[instruction.effectiveAddress];
+                Load[instruction.position].readyToWrite = true;
+            case SD://FIXME this is in writeback
+                 Memory[instruction.effectiveAddress] = RegisterFile[instruction.destinationRegister].value;
+                 
+                break;
+            default: 
+                break;
+        }
+   }
+   
+   public static void write(Instruction instruction)
+   {
+    //FIXME do i need this? if(instruction.executed && !instruction.written)
+    {
+
+       if(instructionsToWrite.isEmpty())
+       {
+           return;
+       }
+       if(instructionsToWrite.size()==1)
+       {
+              writeInstruction();
+              
+       }
+       else
+       {
+            Instruction instructionToWrite = pickInstructionToWrite();
+            writeInstruction();
+       }
+       
+       
+      
+    }
+
+
+   }
+
+   public static Instruction pickInstructionToWrite()
+   {
+       //for each instruction, check its tag in the buffer, and check
+       // how many need that tag and add it to count
+       //also boolean waiting on 1
+       //priotty to waiting on count 1, then muliple ones count, etc, else just send the first)
+       int[][] instructionScores = new int[Adder.length +Multiplier.length + Load.length + Store.length][2]; // 2D array to store counts and waiting on One flag
+       int j=0;
+       for (Instruction instructions: instructionsToWrite)
+       {
+           String currentTag= instructions.tag;
+           int count=0;
+           boolean waitingOnOne=false;
+                 // Iterate through reservation stations - Adder
+                for (int i = 0; i < Adder.length; i++) {
+
+        
+                    // Check for the current instruction's tag in qj and qk of reservation stations and buffers
+                        if (Adder[i].qj.equals(currentTag)) {
+                            count++;
+                            if(Adder[i].qk.equals(currentTag))
+                            {
+                                count++;
+                            }
+                            else{
+                                waitingOnOne=true;
+                            }
+                        }
+                         if (Adder[i].qk.equals(currentTag)) {  
+                              count++;
+                              waitingOnOne=true;
+                        }
+                        
+                }
+                //Iterate through reservation stations - Multiplier
+                for (int i = 0; i < Multiplier.length; i++) {
+                    
+        
+                    // Check for the current instruction's tag in qj and qk of reservation stations and buffers
+                         if (Multiplier[i].qj.equals(currentTag)) {
+                            count++;
+                            if(Multiplier[i].qk.equals(currentTag))
+                            {
+                                count++;
+                            }
+                            else{
+                                waitingOnOne=true;
+                            }
+                        }
+                         if (Multiplier[i].qk.equals(currentTag)) {  
+                              count++;
+                              waitingOnOne=true;
+                        }
+                }
+                // Iterate through load buffer
+        
+                    for (int k = 0; k < Load.length; k++) {
+                        if (Store[k].tag.equals(currentTag)) {
+                            count++;
+                        }
+                    }
+        
+                    // Check for waiting on One condition
+                    if (reservationStations[i].qj() != null && reservationStations[i].getQk() == null) {
+                        waitingOnOne = true;
+                    } else if (reservationStations[i].getQj() == null && reservationStations[i].getQk() != null) {
+                        waitingOnOne = true;
+                    }
+        
+                    // Store count and waiting on One flag in the 2D array
+                    instructionScores[i][0] = count;
+                    instructionScores[i][1] = waitingOnOne;
+                j++;
+        
+                
+        
+                
+            }
+        
+
+            // Find the best instruction based on the highest count and waiting on One flag
+              //  Instruction bestInstruction = null;
+               // int maxCount = -1;
+            //for (int i = 0; i < instructionScores.length; i++) {
+            //         if (instructionScores[i][0] > maxCount && instructionScores[i][1]) {
+            //             maxCount = instructionScores[i][0];
+            //             bestInstruction = reservationStations[i].getInstruction();
+            //         }
+            //     }
+        
+            //     return bestInstruction;
+
+
+   }
+   public static int findIndex(Instruction instruction)
+   {
+       int i=0;
+         for(Instruction ins: instructions)
+         {
+              if(ins.equals(instruction))
+              {
+                return i;
+              }
+              i++;
+         }
+       return -1;
+   }
+
+   public static void emptyReservationStation(ReservationStation[] reservationStation, int position)
+   {
+       reservationStation[position].readyToWrite = false;
+       reservationStation[position].busy = 0;
+       reservationStation[position].instructionType = null;
+       reservationStation[position].vj = "";
+       reservationStation[position].vk = "";
+       reservationStation[position].qj = "";
+       reservationStation[position].qk = "";
+       reservationStation[position].A = "";
+       reservationStation[position].startCycle=-1;
+   }
+
+   public static void emptyBuffer(Buffer[] buffer, int position)
+   {
+       buffer[position].busy = 0;
+       buffer[position].effectiveAddress = -1;
+       buffer[position].startCycle = -1;
+       //buffer[position].readyToWrite = false; //FIXME?
+   }
+
+   public static void writeInstruction()
+   {
+         //FIXME write to CDB
+         
+         //FIXME update finished
+         //FIXME update tags in both
+         //FIXME empty reservation station (method to empty in buffr and reservation station)
+         //check me updates reservations buffers with the new balues
+         //FIXME check -1 etc or that handled above?
+        
+        Instruction instruction = instructionsToWrite.remove();
+        instruction.written=true;
+        instruction.finished=true; //FIXME redundant? also handle prints
+        instructions.remove(findIndex(instruction));
+          switch(instruction.instructionType)
+        {
+            case ADD: case SUB: case ADDI: case SUBI: case BNEZ:  //FIXME bnez here?
+                if(Adder[instruction.position].readyToWrite)
+                {
+                    //FIXME write to CDB
+                    CDB.tag = Adder[instruction.position].tag;
+                    CDB.value = instruction.result + "";
+                    emptyReservationStation(Adder, instruction.position);
+                    instruction.written = true;
+                }
+                break;
+            case MUL: case DIV: 
+                if(Multiplier[instruction.position].readyToWrite)
+                {
+                    //FIXME write to CDB
+                    CDB.tag = Multiplier[instruction.position].tag;
+                    CDB.value = instruction.result +"";
+                    emptyReservationStation(Multiplier, instruction.position);
+                    instruction.written = true;
+                }
+                break;
+            case LD:
+                if(Load[instruction.position].readyToWrite)
+                {
+                    //FIXME write to CDB
+                    CDB.tag = Load[instruction.position].tag;
+                    CDB.value = Memory[instruction.effectiveAddress] + "";
+                    emptyBuffer(Load, instruction.position);
+                    instruction.written = true;
+                }
+                break;
+            case SD:
+                if(Store[instruction.position].readyToWrite)
+                {
+                    //FIXME write to CDB
+                    //  CDB.tag = Store[instruction.position].tag;
+                    // CDB.value = Memory[instruction.effectiveAddress] + "";
+                    emptyBuffer(Store, instruction.position);
+                    instruction.written = true;
+                }
+                break;
+            default: 
+                break;
+        }
    }
 
    public static int availableReservationStation(ReservationStation[] reservationStation)
@@ -141,13 +470,14 @@ public class Microprocessor {
 
    //FIXME floating point in same reg file right not separate?
 
+   // return the position of the reservation station that is available , else -1 if no free slot
    public static int reservationStation(Instruction instruction)
    {
         switch(instruction.instructionType)
         {
             case ADD: case SUB: case ADDI: case SUBI: case BNEZ:  //FIXME bnez here?
                 return availableReservationStation(Adder);
-            case MUL: case DIV: //FIXME case MULI: case DIVI:
+            case MUL: case DIV: 
                 return availableReservationStation(Multiplier);
             case LD:
                 return availableBuffer(Load);
@@ -158,47 +488,115 @@ public class Microprocessor {
                 }
                 
         }
+
+   public static void checkAvailability(int j, int k, ReservationStation[] reservationStation, int position)
+        {
+            if(RegisterFile[j].busy == 0)
+            {  //register value is available
+                reservationStation[position].vj = Memory[j] + "";
+                reservationStation[position].qj = "";
+            }
+            else
+            { //register value is not available so we add the reg tag of the reservation station then
+                //TODO use the tags in the reservation station to find the values from reg file
+                reservationStation[position].qj = RegisterFile[j].tag;
+                reservationStation[position].vj = "";
+            }
+            if(RegisterFile[k].busy == 0)
+            {
+                reservationStation[position].vk = Memory[j] + "";
+                reservationStation[position].qk = "";
+            }
+            else
+            {
+                reservationStation[position].qk = RegisterFile[k].tag;
+                reservationStation[position].vk = "";
+            }
+        }
    
-    
-        public static void issueInstruction(Instruction instruction)
+public static void checkAvailabilityImmediate(int j, int immediate, ReservationStation[] reservationStation, int position)
+ {
+            if(RegisterFile[j].busy == 0)
+            {  //register value is available
+                reservationStation[position].vj =Memory[j] + "";
+                reservationStation[position].qj = "";
+            }
+            else
+            { //register value is not available so we add the reg tag of the reservation station then
+                //TODO use the tags in the reservation station to find the values from reg file
+                reservationStation[position].qj = RegisterFile[j].tag;
+                reservationStation[position].vj = "";
+            }
+            
+                reservationStation[position].vk = immediate + "";
+                reservationStation[position].qk = "";
+            
+            
+        }
+
+    public static void issueInstruction(Instruction instruction)
         {
             int position = reservationStation(instruction);
+            if(position ==-1)
+            {
+                //FIXME if -1 we stall only right?
+                return; 
+            }
             switch(instruction.instructionType)
             {
-                case ADD: case SUB: case ADDI: case SUBI: case BNEZ:  //FIXME bnez here?
+                case ADD: case SUB:   //FIXME bnez here?
                     Adder[position].busy = 1;
                     Adder[position].instructionType = instruction.instructionType;
-                    //TODO check they are available, and put in the correct place
-                    Adder[position].vj = instruction.j;
-                    Adder[position].vk = instruction.k;
-                    Adder[position].qj = instruction.j;
-                    Adder[position].qk = instruction.k;
-                    Adder[position].A = instruction.j + instruction.k;
-                    //Adder[position].tag = instruction.instructionNumber;
+                    checkAvailability(instruction.j, instruction.k, Adder, position);
+                    //FIXME what if the reg file busy of that reg was 1?
+                    RegisterFile[instruction.destinationRegister].busy = 1;
+                    RegisterFile[instruction.destinationRegister].tag = Adder[position].tag;
+                    instruction.tag = Adder[position].tag;
                     break;
-                case MUL: case DIV: //FIXME case MULI: case DIVI:
-                    Multiplier[position].busy = 1;
-                    Multiplier[position].instructionType = instruction.instructionType;
-                    Multiplier[position].vj = instruction.j;
-                    Multiplier[position].vk = instruction.k;
-                    Multiplier[position].qj = instruction.j;
-                    Multiplier[position].qk = instruction.k;
-                    Multiplier[position].A = instruction.j + instruction.k;
-                   // Multiplier[position].tag = instruction.instructionNumber;
+
+                case MUL: case DIV: 
+                   Multiplier[position].busy = 1;
+                   Multiplier[position].instructionType = instruction.instructionType;
+                   checkAvailability(instruction.j, instruction.k, Multiplier, position);
+                    //FIXME what if the reg file busy of that reg was 1?
+                    RegisterFile[instruction.destinationRegister].busy = 1;
+                    RegisterFile[instruction.destinationRegister].tag = Multiplier[position].tag;
+                    instruction.tag = Multiplier[position].tag;
                     break;
+
+                case ADDI: case SUBI: 
+                    Adder[position].busy = 1;
+                    Adder[position].instructionType = instruction.instructionType;
+                    checkAvailabilityImmediate(instruction.j, instruction.immediate, Adder, position);
+                    RegisterFile[instruction.destinationRegister].busy = 1;
+                    RegisterFile[instruction.destinationRegister].tag = Adder[position].tag;
+                    instruction.tag = Adder[position].tag;
+                   break;
+
                 case LD:
                     Load[position].busy = 1;
-                   // Load[position].tag = instruction.instructionNumber;
+                    Load[position].effectiveAddress= instruction.effectiveAddress;
+                    RegisterFile[instruction.destinationRegister].busy = 1; 
+                    RegisterFile[instruction.destinationRegister].tag = Load[position].tag;
+                    instruction.tag = Load[position].tag;
                     break;
                 case SD:
                     Store[position].busy = 1;
-                  //  Store[position].tag = instruction.instructionNumber;
+                    Store[position].effectiveAddress= instruction.effectiveAddress;
+                    RegisterFile[instruction.destinationRegister].busy = 1; 
+                    RegisterFile[instruction.destinationRegister].tag = Store[position].tag;
+                    instruction.tag = Store[position].tag;
                     break;
-                default: break; 
+                case BNEZ:
+
+                break;
             }
+            instruction.issued=true;
+            instruction.issueCycle=clockCycle;
+            instruction.position=position; //FIXME do we need this?
         }
 
-    public static void loadInstructions(){
+    public static void loadInstructions(Microprocessor microprocessor, int[] latencies){
          //read the file
         try {
             File myObj = new File("input.txt");
@@ -206,7 +604,7 @@ public class Microprocessor {
             while (myReader.hasNextLine()) {
               String data = myReader.nextLine();
               String[] words = data.split("[,\\s]+");
-              Instruction instruction = new Instruction(words);
+              Instruction instruction = new Instruction(words,microprocessor,latencies);
               instructions.add(instruction);
             }
             myReader.close();
@@ -224,16 +622,37 @@ public class Microprocessor {
         //check onstruction valid
         //see if issued do this etc
            // for(int i=0;)
-        Microprocessor microprocessor=new Microprocessor(2,3,3,3,10);
-        loadInstructions();
+       
+        //TODO gui for this
+        int mulLatency=10;
+        int loadLatency=3;
+        int storeLatency=3;
+        int divLatency=-3;
+        int subLatency=2;
+        int addLatency=2;
+        int subiLatency=2;
+        
+        int memorySize=100;
+
+        int adderSize=3;
+        int registerSize=30;
+        int multiplierSize=2;
+        int loadSize=3;
+        int storeSize=3;
+        int latencies[]={addLatency,subLatency,subiLatency,mulLatency,divLatency,loadLatency,storeLatency};
+
+        
+        Microprocessor microprocessor=new Microprocessor(adderSize,multiplierSize,loadSize,storeSize,registerSize,memorySize);
+        loadInstructions(microprocessor,latencies);
        
         for( Instruction instruction: instructions) {
             checkCleanup();
             
-            // issue();
-            // execute();
+             issue(instruction);
+             execute(instruction);
             // write();
             // print();
+            //checkCleanup(); //should update buffers and stations and cdb ig and remove from arraylist instructions?
             clockCycle++;
             
             
