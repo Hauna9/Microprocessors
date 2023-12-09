@@ -37,7 +37,7 @@ public class Instruction {
     static int bnezLatency =1;
     static int addiLatency =1;
     static int addLatency;
-    static int subiLatency;
+    static int subiLatency =1;
     static int subLatency;
     static int mulLatency;
     static int divLatency;
@@ -62,11 +62,10 @@ public class Instruction {
         //FIXME set the latencies
         addLatency=latencies[0];
         subLatency=latencies[1];
-        subiLatency=latencies[2];
-        mulLatency=latencies[3];
-        divLatency=latencies[4];
-        loadLatency=latencies[5];
-        storeLatency=latencies[6];
+        mulLatency=latencies[2];
+        divLatency=latencies[3];
+        loadLatency=latencies[4];
+        storeLatency=latencies[5];
         this.written=false;
         this.finished=false;
         this.executeStartCycle=-1;

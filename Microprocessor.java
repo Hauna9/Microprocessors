@@ -52,6 +52,7 @@ public class Microprocessor {
     static RegisterFile[] RegisterFile; // reg number is the position;//FIXME make it even? and value , default is 0
     static CommonDataBus CDB; // one value has tag, the other has the actual value
     static float[] Memory;
+    static boolean stall=false;
 
    public Microprocessor(int adderSize, int multiplierSize, int loadSize, int storeSize, int registerSize, int memorySize)
    {
@@ -66,7 +67,7 @@ public class Microprocessor {
     populateBuffer(Store, "S");
     RegisterFile = new RegisterFile[registerSize];
     CDB = new CommonDataBus(); //FIXME do the constructor
-    Memory = new int[memorySize];
+    Memory = new float[memorySize];
     
 
    }
@@ -102,8 +103,14 @@ public class Microprocessor {
     //Available reservation station
      if(reservationStation(instruction) != -1)
      {
-        issueInstruction(instruction);        
+       stall=false;
+        issueInstruction(instruction);     
+           
      } 
+     else{
+            stall=true;
+        
+     }
    }
 }
 
@@ -227,7 +234,7 @@ public class Microprocessor {
         }
    }
    
-   public static void write(Instruction instruction)
+   public static void write()
    {
     //FIXME do i need this? if(instruction.executed && !instruction.written)
     {
@@ -236,15 +243,11 @@ public class Microprocessor {
        {
            return;
        }
-       if(instructionsToWrite.size()==1)
-       {
-              writeInstruction();
-              
-       }
+      
        else
        {
-            Instruction instructionToWrite = pickInstructionToWrite();
-            writeInstruction();
+            Instruction instructionToWrite = instructionsToWrite.poll();
+            writeInstruction(instructionToWrite);
        }
        
        
@@ -254,100 +257,7 @@ public class Microprocessor {
 
    }
 
-   public static Instruction pickInstructionToWrite()
-   {
-       //for each instruction, check its tag in the buffer, and check
-       // how many need that tag and add it to count
-       //also boolean waiting on 1
-       //priotty to waiting on count 1, then muliple ones count, etc, else just send the first)
-       int[][] instructionScores = new int[Adder.length +Multiplier.length + Load.length + Store.length][2]; // 2D array to store counts and waiting on One flag
-       int j=0;
-       for (Instruction instructions: instructionsToWrite)
-       {
-           String currentTag= instructions.tag;
-           int count=0;
-           boolean waitingOnOne=false;
-                 // Iterate through reservation stations - Adder
-                for (int i = 0; i < Adder.length; i++) {
-
-        
-                    // Check for the current instruction's tag in qj and qk of reservation stations and buffers
-                        if (Adder[i].qj.equals(currentTag)) {
-                            count++;
-                            if(Adder[i].qk.equals(currentTag))
-                            {
-                                count++;
-                            }
-                            else{
-                                waitingOnOne=true;
-                            }
-                        }
-                         if (Adder[i].qk.equals(currentTag)) {  
-                              count++;
-                              waitingOnOne=true;
-                        }
-                        
-                }
-                //Iterate through reservation stations - Multiplier
-                for (int i = 0; i < Multiplier.length; i++) {
-                    
-        
-                    // Check for the current instruction's tag in qj and qk of reservation stations and buffers
-                         if (Multiplier[i].qj.equals(currentTag)) {
-                            count++;
-                            if(Multiplier[i].qk.equals(currentTag))
-                            {
-                                count++;
-                            }
-                            else{
-                                waitingOnOne=true;
-                            }
-                        }
-                         if (Multiplier[i].qk.equals(currentTag)) {  
-                              count++;
-                              waitingOnOne=true;
-                        }
-                }
-                // Iterate through load buffer
-        
-                    for (int k = 0; k < Load.length; k++) {
-                        if (Store[k].tag.equals(currentTag)) {
-                            count++;
-                        }
-                    }
-        
-                    // Check for waiting on One condition
-                    if (reservationStations[i].qj() != null && reservationStations[i].getQk() == null) {
-                        waitingOnOne = true;
-                    } else if (reservationStations[i].getQj() == null && reservationStations[i].getQk() != null) {
-                        waitingOnOne = true;
-                    }
-        
-                    // Store count and waiting on One flag in the 2D array
-                    instructionScores[i][0] = count;
-                    instructionScores[i][1] = waitingOnOne;
-                j++;
-        
-                
-        
-                
-            }
-        
-
-            // Find the best instruction based on the highest count and waiting on One flag
-              //  Instruction bestInstruction = null;
-               // int maxCount = -1;
-            //for (int i = 0; i < instructionScores.length; i++) {
-            //         if (instructionScores[i][0] > maxCount && instructionScores[i][1]) {
-            //             maxCount = instructionScores[i][0];
-            //             bestInstruction = reservationStations[i].getInstruction();
-            //         }
-            //     }
-        
-            //     return bestInstruction;
-
-
-   }
+   
    public static int findIndex(Instruction instruction)
    {
        int i=0;
@@ -383,7 +293,7 @@ public class Microprocessor {
        //buffer[position].readyToWrite = false; //FIXME?
    }
 
-   public static void writeInstruction()
+   public static void writeInstruction(Instruction instruction)
    {
          //FIXME write to CDB
          
@@ -393,7 +303,6 @@ public class Microprocessor {
          //check me updates reservations buffers with the new balues
          //FIXME check -1 etc or that handled above?
         
-        Instruction instruction = instructionsToWrite.remove();
         instruction.written=true;
         instruction.finished=true; //FIXME redundant? also handle prints
         instructions.remove(findIndex(instruction));
@@ -442,7 +351,58 @@ public class Microprocessor {
             default: 
                 break;
         }
+        updateStations(instruction);
    }
+
+   public static void updateStations(Instruction instruction)
+   {
+       for(ReservationStation reservationStation: Adder)
+       {
+           if(reservationStation.qj.equals(instruction.tag))
+           {
+               reservationStation.qj = "";
+               reservationStation.vj = CDB.value+ "";
+           }
+           if(reservationStation.qk.equals(instruction.tag))
+           {
+               reservationStation.qk = "";
+               reservationStation.vk = CDB.value+ "";
+           }
+       }
+       for(ReservationStation reservationStation: Multiplier)
+       {
+           if(reservationStation.qj.equals(instruction.tag))
+           {
+               reservationStation.qj = "";
+               reservationStation.vj = CDB.value+ "";
+           }
+           if(reservationStation.qk.equals(instruction.tag))
+           {
+               reservationStation.qk = "";
+               reservationStation.vk = CDB.value+ "";
+           }
+       }
+    //    for(Buffer buffer: Store)
+    //    {
+    //        if(buffer.tag.equals(instruction.tag))
+    //        {
+    //            buffer.readyToWrite = false;
+    //            buffer.busy = 0;
+    //            buffer.effectiveAddress = -1;
+    //            buffer.startCycle = -1;
+    //        }
+    //   }
+    for(int i=0; i<RegisterFile.length; i++)
+    {
+        if(RegisterFile[i].tag.equals(instruction.tag))
+        {
+            RegisterFile[i].busy = 0;
+            RegisterFile[i].tag = "";
+            RegisterFile[i].value = Float.parseFloat(CDB.value);
+        }
+    }
+   }
+
 
    public static int availableReservationStation(ReservationStation[] reservationStation)
    {
@@ -623,23 +583,20 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         //see if issued do this etc
            // for(int i=0;)
        
-        //TODO gui for this
+        //TODO gui for this , input and output
         int mulLatency=10;
         int loadLatency=3;
         int storeLatency=3;
         int divLatency=-3;
         int subLatency=2;
         int addLatency=2;
-        int subiLatency=2;
-        
         int memorySize=100;
-
         int adderSize=3;
         int registerSize=30;
         int multiplierSize=2;
         int loadSize=3;
         int storeSize=3;
-        int latencies[]={addLatency,subLatency,subiLatency,mulLatency,divLatency,loadLatency,storeLatency};
+        int latencies[]={addLatency,subLatency,mulLatency,divLatency,loadLatency,storeLatency};
 
         
         Microprocessor microprocessor=new Microprocessor(adderSize,multiplierSize,loadSize,storeSize,registerSize,memorySize);
@@ -648,9 +605,10 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         for( Instruction instruction: instructions) {
             checkCleanup();
             
-             issue(instruction);
+            if(!stall)
+             {issue(instruction);}
              execute(instruction);
-            // write();
+             write();
             // print();
             //checkCleanup(); //should update buffers and stations and cdb ig and remove from arraylist instructions?
             clockCycle++;
