@@ -79,6 +79,19 @@ public class Microprocessor {
     CDB = new CommonDataBus(); //FIXME do the constructor
     Memory = new float[memorySize];
     
+       RegisterFile[1].value=1;
+       RegisterFile[2].value=2;
+       RegisterFile[4].value=3;
+       RegisterFile[6].value=4;
+       RegisterFile[8].value=5;
+       RegisterFile[9].value=6;
+
+       Memory[1]=1;
+       Memory[2]=2;
+       Memory[4]=3;
+       Memory[6]=4;
+       Memory[8]=5;
+       Memory[9]=6;
 
    }
 
@@ -139,6 +152,43 @@ public class Microprocessor {
 
    public static void execute(){
 
+    
+    for(ReservationStation reservationStation: Multiplier)
+    {
+        Instruction instruction= reservationStation.instruction;
+        if(instruction!=null &&!instruction.executed && instruction.issued && instruction.issueCycle!=clockCycle) //check instruction has not been executed
+    {
+        if(instruction.executeStartCycle == -1) //execution has not started
+       { if(canExecute(instruction))
+        {
+            System.out.println("CAN EXECUTE MULTIPLY " + instruction.instructionString);
+            //start execution
+            instruction.executeStartCycle = clockCycle;
+            startExecute(instruction);
+        }
+         }
+    else{
+            instruction.duration--;
+            updateDurationInStation(instruction);
+
+        if(instruction.duration == 0)
+        {
+            instruction.executed = true;
+            instruction.executeEndCycle = clockCycle;
+            executeInstruction(instruction);
+            instructionsToWrite.add(instruction);
+
+           
+        }   
+    } 
+    }
+      } 
+
+    
+    
+    
+    
+    
     for(ReservationStation reservationStation: Adder)
     {
         Instruction instruction= reservationStation.instruction;
@@ -176,37 +226,7 @@ public class Microprocessor {
       
 
     }
-    for(ReservationStation reservationStation: Multiplier)
-    {
-        Instruction instruction= reservationStation.instruction;
-        if(instruction!=null &&!instruction.executed && instruction.issued && instruction.issueCycle!=clockCycle) //check instruction has not been executed
-    {
-        if(instruction.executeStartCycle == -1) //execution has not started
-       { if(canExecute(instruction))
-        {
-            System.out.println("CAN EXECUTE MULTIPLY " + instruction.instructionString);
-            //start execution
-            instruction.executeStartCycle = clockCycle;
-            startExecute(instruction);
-        }
-         }
-    else{
-            instruction.duration--;
-            updateDurationInStation(instruction);
-
-        if(instruction.duration == 0)
-        {
-            instruction.executed = true;
-            instruction.executeEndCycle = clockCycle;
-            executeInstruction(instruction);
-            instructionsToWrite.add(instruction);
-
-           
-        }   
-    } 
-    }
-      } 
-
+    
       for (Buffer buffer: Load)
     {
         Instruction instruction= buffer.instruction;
@@ -965,19 +985,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         
         Microprocessor microprocessor=new Microprocessor(adderSize,multiplierSize,loadSize,storeSize,registerSize,memorySize);
         loadInstructions(microprocessor,latencies);
-       RegisterFile[1].value=1;
-       RegisterFile[2].value=2;
-       RegisterFile[4].value=3;
-       RegisterFile[6].value=4;
-       RegisterFile[8].value=5;
-       RegisterFile[9].value=6;
-
-       Memory[1]=1;
-       Memory[2]=2;
-       Memory[4]=3;
-       Memory[6]=4;
-       Memory[8]=5;
-       Memory[9]=6;
+       
 
         int end=instructions.size();
         System.out.println("end is "+end);
@@ -1005,11 +1013,10 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
              write();
 
              //System.out.println("Instruction to write size : " + instructionsToWrite.size());
-             print(pc, clockCycle);
+            print(pc, clockCycle);
             clockCycle++;
             
-            if(clockCycle==10 )
-            break;
+            
 
             
             
