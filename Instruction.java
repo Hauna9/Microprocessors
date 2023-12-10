@@ -19,7 +19,7 @@ public class Instruction {
     boolean finished;
     float result;
     String tag;
-    String instructionString;
+    public String instructionString;
 
 
 
@@ -50,7 +50,15 @@ public class Instruction {
 //     insucion class --> instcution type , and has its own counter according to the stages of the intrsuctin type
 // taken to load (starts decrementing once issued and exec started) (boolean exec staryted)
 
-    public Instruction(String [] words,Microprocessor microprocessor, int[] latencies) {
+    public Instruction(String [] words,Microprocessor microprocessor, int[] latencies, String data) {
+
+        //set latencies
+        addLatency=latencies[0];
+        subLatency=latencies[1];
+        mulLatency=latencies[2];
+        divLatency=latencies[3];
+        loadLatency=latencies[4];
+        storeLatency=latencies[5];
 
         this.instructionType = InstructionType.valueOf(words[0].toUpperCase());
         setAttributes(words);
@@ -62,18 +70,14 @@ public class Instruction {
         this.destinationRegister= Integer.parseInt(words[1].substring(1)); // extract the register number
         //bnez reg number to check
         //FIXME set the latencies
-        addLatency=latencies[0];
-        subLatency=latencies[1];
-        mulLatency=latencies[2];
-        divLatency=latencies[3];
-        loadLatency=latencies[4];
-        storeLatency=latencies[5];
+        
         this.written=false;
         this.finished=false;
         this.executeStartCycle=-1;
         this.executeEndCycle=-1;
         this.result=-1;
         this.tag="";
+        this.instructionString=data;
 
     }
 
@@ -133,7 +137,7 @@ public class Instruction {
         }
     }
 
-    public void print(Instruction instruction)
+    public void print()
     {
         System.out.println(instructionString);
         System.out.print("Instruction Type: " + instructionType +

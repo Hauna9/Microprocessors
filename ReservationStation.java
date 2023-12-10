@@ -10,8 +10,11 @@ public class ReservationStation {
     String A;
     String tag; //FIXME make this tag a string?
     boolean readyToWrite;
+    int duration;
+    int executeEndCycle;
+    Instruction instruction;
 
-    public ReservationStation(String tagCharacter) {
+    public ReservationStation(String tagCharacter, int duration) {
         this.startCycle = -1; //FIXME is this needed?
         this.busy = 0;
         this.instructionType = null;
@@ -22,11 +25,15 @@ public class ReservationStation {
         this.A = "";
         this.tag = tagCharacter;
         this.readyToWrite = false;
+        this.duration = duration;
+        this.executeEndCycle=-1;
+        
     }
     public void print()
     {
         System.out.print("Tag: " + tag +
                          "\tStart Cycle: " + startCycle +
+                         "\t Execute End Cycle: " + executeEndCycle +
                          "\tBusy: " + busy +
                          "\tInstruction Type: " + (instructionType != null ? instructionType.toString() : "None") +
                          "\tVj: " + vj +
@@ -34,6 +41,7 @@ public class ReservationStation {
                          "\tQj: " + qj +
                          "\tQk: " + qk +
                          "\tA: " + A +
+                         "\tDuration left: " + duration +
                          "\tReady To Write: " + readyToWrite);
     
     }
