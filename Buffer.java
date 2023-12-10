@@ -13,5 +13,15 @@ public class Buffer {
         this.startCycle = -1;
     }
     
+    public void toString(Buffer buffer)
+    {
+        System.out.print("Tag: " + tag +
+                         "\tBusy: " + busy +
+                         "\tEffective Address: " + effectiveAddress +
+                         "\tStart Cycle: " + startCycle +
+                         "\tReady To Write: " + readyToWrite);
+    
+    }
     
 }
+

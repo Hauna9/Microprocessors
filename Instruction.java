@@ -19,6 +19,7 @@ public class Instruction {
     boolean finished;
     float result;
     String tag;
+    String instructionString;
 
 
 
@@ -50,6 +51,7 @@ public class Instruction {
 // taken to load (starts decrementing once issued and exec started) (boolean exec staryted)
 
     public Instruction(String [] words,Microprocessor microprocessor, int[] latencies) {
+
         this.instructionType = InstructionType.valueOf(words[0].toUpperCase());
         setAttributes(words);
         this.issued = false;
@@ -129,6 +131,29 @@ public class Instruction {
             default:
                 return 0;
         }
+    }
+
+    public void toString(Instruction instruction)
+    {
+        System.out.println(instructionString);
+        System.out.print("Instruction Type: " + instructionType +
+                         "\tDestination Register: " + destinationRegister +
+                         "\tJ: " + j +
+                         "\tK: " + k +
+                         "\tEffective Address: " + effectiveAddress +
+                         "\tImmediate: " + immediate +
+                         "\tIssued: " + issued +
+                         "\tIssue Cycle: " + issueCycle +
+                         "\tExecuted: " + executed +
+                         "\tDuration: " + duration +
+                         "\tPosition: " + position +
+                         "\tWritten: " + written +
+                         "\tFinished: " + finished +
+                         "\tExecute Start Cycle: " + executeStartCycle +
+                         "\tExecute End Cycle: " + executeEndCycle +
+                         "\tResult: " + result +
+                         "\tTag: " + tag);
+    
     }
 
 

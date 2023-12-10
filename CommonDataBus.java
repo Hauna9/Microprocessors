@@ -7,4 +7,11 @@ public class CommonDataBus {
         this.tag = "";
         this.value = "";
     }
+
+    public void toString(CommonDataBus cdb)
+    {
+        System.out.print("Tag: " + tag +
+                         "\tValue: " + value);
+    
+    }
 }

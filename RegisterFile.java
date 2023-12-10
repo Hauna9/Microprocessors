@@ -10,4 +10,12 @@ public class RegisterFile {
         this.tag = ""; //if tag isnt empty then there is an instruction awaiin value
         this.value = -1;
     }
+
+    public void toString(RegisterFile rf)
+    {
+        System.out.print("Tag: " + tag +
+                         "\tBusy: " + busy +
+                         "\tValue: " + value);
+    
+    }
 }

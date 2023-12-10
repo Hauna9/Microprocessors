@@ -23,6 +23,19 @@ public class ReservationStation {
         this.tag = tagCharacter;
         this.readyToWrite = false;
     }
-
+    public void toString(ReservationStation rs)
+    {
+        System.out.print("Tag: " + tag +
+                         "\tStart Cycle: " + startCycle +
+                         "\tBusy: " + busy +
+                         "\tInstruction Type: " + (instructionType != null ? instructionType.toString() : "None") +
+                         "\tVj: " + vj +
+                         "\tVk: " + vk +
+                         "\tQj: " + qj +
+                         "\tQk: " + qk +
+                         "\tA: " + A +
+                         "\tReady To Write: " + readyToWrite);
+    
+    }
 
 }

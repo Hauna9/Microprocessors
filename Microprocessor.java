@@ -42,8 +42,9 @@ import java.io.*;
 
 public class Microprocessor {
 
-    static Queue<Instruction> instructions;
+    static ArrayList instructions;
     static Queue<Instruction> instructionsToWrite; //got issued
+    static ArrayList currInstructions; //got issued
     static int clockCycle = 0;
     static ReservationStation[] Adder;
     static ReservationStation[] Multiplier;
@@ -53,10 +54,13 @@ public class Microprocessor {
     static CommonDataBus CDB; // one value has tag, the other has the actual value
     static float[] Memory;
     static boolean stall=false;
+    static int pc=0;
 
    public Microprocessor(int adderSize, int multiplierSize, int loadSize, int storeSize, int registerSize, int memorySize)
    {
-    instructions= new LinkedList<>();
+    instructions= new ArrayList<>();
+    instructionsToWrite=new LinkedList<>();
+    currInstructions=new ArrayList<>();
     Adder = new ReservationStation[adderSize];
     populateReservationStation(Adder, "A");
     Multiplier = new ReservationStation[multiplierSize];
@@ -139,6 +143,9 @@ public class Microprocessor {
                     emptyBuffer(Store, instruction.position);
                     instruction.written = true;
                 }
+            else
+                {
+                    instructionsToWrite.add(instruction);
 
         }
         }
@@ -147,6 +154,7 @@ public class Microprocessor {
     }   
 
     }
+}
 
     public static void startExecute(Instruction instruction)
     {
@@ -258,19 +266,19 @@ public class Microprocessor {
    }
 
    
-   public static int findIndex(Instruction instruction)
-   {
-       int i=0;
-         for(Instruction ins: instructions)
-         {
-              if(ins.equals(instruction))
-              {
-                return i;
-              }
-              i++;
-         }
-       return -1;
-   }
+//    public static int findIndex(Instruction instruction)
+//    {
+//        int i=0;
+//          for(Instruction ins: instructions)
+//          {
+//               if(ins.equals(instruction))
+//               {
+//                 return i;
+//               }
+//               i++;
+//          }
+//        return -1;
+//    }
 
    public static void emptyReservationStation(ReservationStation[] reservationStation, int position)
    {
@@ -305,7 +313,8 @@ public class Microprocessor {
         
         instruction.written=true;
         instruction.finished=true; //FIXME redundant? also handle prints
-        instructions.remove(findIndex(instruction));
+        // instructionsToWrite.remove(findIndex(instruction));
+        currInstructions.remove(instruction); 
           switch(instruction.instructionType)
         {
             case ADD: case SUB: case ADDI: case SUBI: case BNEZ:  //FIXME bnez here?
@@ -565,7 +574,9 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
               String data = myReader.nextLine();
               String[] words = data.split("[,\\s]+");
               Instruction instruction = new Instruction(words,microprocessor,latencies);
+              instruction.instructionString = data;
               instructions.add(instruction);
+              currInstructions.add(instruction);
             }
             myReader.close();
           } catch (FileNotFoundException e) {
@@ -575,6 +586,86 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         /* Instruction instruction = new Instruction();
             instruction.initialise(); */
     }
+
+    public static void print(int pc, int clockCycle)
+    {
+        //print content of reg file
+        //print current instruction
+        //print reservation stations
+        //print buffers
+        //print CDB
+        //print memory
+        //print clock cycle
+        //print instructions
+        //print instructions to write
+            System.out.println("Clock Cycle: " + clockCycle);
+            System.out.println("PC Value: " + pc);
+        
+            // Print content of reservation stations
+            System.out.println("Reservation Stations:");
+            System.out.println("Adder:");
+            int i=0;
+            for (ReservationStation rs : Adder) {
+                
+                    System.out.println("Adder position"+ i+": " +rs.toString());
+                    i++;
+            }
+            System.out.println("Multiplier:");
+            i=0;
+            for (ReservationStation rs : Multiplier) {
+            
+                    System.out.println("Multiplier position"+ i+": " +rs.toString());
+                    i++;
+            }
+        
+            // Print content of buffers
+            System.out.println("Load Buffers:");
+            i=0;
+            for (Buffer buffer : Load) {
+                
+                    System.out.println("Load buffer position"+ i+": " +buffer.toString());
+                    i++;
+            }
+            System.out.println("Store Buffers:");
+            i=0;
+            for (Buffer buffer : Store) {
+                
+                    System.out.println("Store buffer position"+ i+": " +buffer.toString());
+                    i++;
+            }
+        
+            // Print content of Register File
+            System.out.println("Register File:");
+            for (RegisterFile reg : RegisterFile) {
+                System.out.println(reg.toString());
+            }
+        
+            // Print content of Memory
+            System.out.println("Memory:");
+            for (float mem : Memory) {
+                System.out.println(mem);
+            }
+        
+            // Print content of Common Data Bus
+            System.out.println("Common Data Bus:");
+            System.out.println(CDB.toString());
+        
+            // Print current instruction being issued
+            if (pc < currInstructions.size()) {
+                Instruction currentInstruction = (Instruction) currInstructions.get(pc);
+                System.out.println("Current Instruction: " + currentInstruction.toString());
+            }
+        
+            // Print instructionsToWrite
+            System.out.println("Instructions To Write:");
+            for (Instruction instruction : instructionsToWrite) {
+                System.out.println(instruction.toString());
+            }
+        
+            System.out.println("------------------------------");
+        }
+        
+    
     public static void main(String[] args) {
         //initialise the variables in this arch at the top
         //loop  --> check instructions loop
@@ -584,15 +675,15 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
            // for(int i=0;)
        
         //TODO gui for this , input and output
-        int mulLatency=10;
-        int loadLatency=3;
-        int storeLatency=3;
-        int divLatency=-3;
-        int subLatency=2;
-        int addLatency=2;
-        int memorySize=100;
-        int adderSize=3;
-        int registerSize=30;
+        int mulLatency=6;
+        int loadLatency=1;
+        int storeLatency=1;
+        int divLatency=1;
+        int subLatency=1;
+        int addLatency=6;
+        int memorySize=15;
+        int adderSize=2;
+        int registerSize=15;
         int multiplierSize=2;
         int loadSize=3;
         int storeSize=3;
@@ -602,14 +693,21 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         Microprocessor microprocessor=new Microprocessor(adderSize,multiplierSize,loadSize,storeSize,registerSize,memorySize);
         loadInstructions(microprocessor,latencies);
        
-        for( Instruction instruction: instructions) {
-            checkCleanup();
+        int end=instructions.size();
+        while (pc<end) {
+          //  checkCleanup();
+            print(pc, clockCycle);
+            Instruction instruction=(Instruction) currInstructions.get(pc);
+            if(!stall && !instruction.issued)
+                {issue(instruction);pc--;}
             
-            if(!stall)
-             {issue(instruction);}
-             execute(instruction);
+            for(Object ins: currInstructions)
+             {
+                 execute((Instruction)ins);
+             }
              write();
-            // print();
+             
+             pc++;
             //checkCleanup(); //should update buffers and stations and cdb ig and remove from arraylist instructions?
             clockCycle++;
             
