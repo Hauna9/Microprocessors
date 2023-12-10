@@ -23,7 +23,7 @@ public class ReservationStation {
         this.tag = tagCharacter;
         this.readyToWrite = false;
     }
-    public void toString(ReservationStation rs)
+    public void print()
     {
         System.out.print("Tag: " + tag +
                          "\tStart Cycle: " + startCycle +

@@ -11,7 +11,7 @@ public class RegisterFile {
         this.value = -1;
     }
 
-    public void toString(RegisterFile rf)
+    public void print()
     {
         System.out.print("Tag: " + tag +
                          "\tBusy: " + busy +

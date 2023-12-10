@@ -133,7 +133,7 @@ public class Instruction {
         }
     }
 
-    public void toString(Instruction instruction)
+    public void print(Instruction instruction)
     {
         System.out.println(instructionString);
         System.out.print("Instruction Type: " + instructionType +

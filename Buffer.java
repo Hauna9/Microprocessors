@@ -13,7 +13,7 @@ public class Buffer {
         this.startCycle = -1;
     }
     
-    public void toString(Buffer buffer)
+    public void print()
     {
         System.out.print("Tag: " + tag +
                          "\tBusy: " + busy +

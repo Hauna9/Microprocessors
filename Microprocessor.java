@@ -69,7 +69,15 @@ public class Microprocessor {
     populateBuffer(Load, "L");
     Store = new Buffer[storeSize];
     populateBuffer(Store, "S");
+
     RegisterFile = new RegisterFile[registerSize];
+    for(int i=0; i<RegisterFile.length; i++)
+    {
+        RegisterFile[i] = new RegisterFile();
+    }
+    
+
+
     CDB = new CommonDataBus(); //FIXME do the constructor
     Memory = new float[memorySize];
     
@@ -120,7 +128,7 @@ public class Microprocessor {
 
    public static void execute(Instruction instruction){
 
-    if(!instruction.executed) //check instruction has not been executed
+    if(!instruction.executed && instruction.issued) //check instruction has not been executed
     {
         if(instruction.executeStartCycle == -1) //execution has not started
        { if(canExecute(instruction))
@@ -540,6 +548,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
                     RegisterFile[instruction.destinationRegister].busy = 1;
                     RegisterFile[instruction.destinationRegister].tag = Adder[position].tag;
                     instruction.tag = Adder[position].tag;
+
                    break;
 
                 case LD:
@@ -565,6 +574,11 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             instruction.position=position; //FIXME do we need this?
         }
 
+    public static void printWords(String[] words){
+        for(String word: words){
+            System.out.println(word);
+        }
+    }
     public static void loadInstructions(Microprocessor microprocessor, int[] latencies){
          //read the file
         try {
@@ -573,6 +587,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             while (myReader.hasNextLine()) {
               String data = myReader.nextLine();
               String[] words = data.split("[,\\s]+");
+             // printWords(words);
               Instruction instruction = new Instruction(words,microprocessor,latencies);
               instruction.instructionString = data;
               instructions.add(instruction);
@@ -607,14 +622,18 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             int i=0;
             for (ReservationStation rs : Adder) {
                 
-                    System.out.println("Adder position"+ i+": " +rs.toString());
+                    System.out.print("Adder position"+ i+": " );
+                    rs.print();
+                    System.out.println();
                     i++;
             }
             System.out.println("Multiplier:");
             i=0;
             for (ReservationStation rs : Multiplier) {
             
-                    System.out.println("Multiplier position"+ i+": " +rs.toString());
+                    System.out.println("Multiplier position"+ i+": " );
+                    rs.print();
+                    System.out.println();
                     i++;
             }
         
@@ -623,21 +642,26 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             i=0;
             for (Buffer buffer : Load) {
                 
-                    System.out.println("Load buffer position"+ i+": " +buffer.toString());
+                    System.out.println("Load buffer position"+ i+": " );
+                    buffer.print();
+                    System.out.println();
                     i++;
             }
             System.out.println("Store Buffers:");
             i=0;
             for (Buffer buffer : Store) {
                 
-                    System.out.println("Store buffer position"+ i+": " +buffer.toString());
+                    System.out.println("Store buffer position"+ i+": " );
+                    buffer.print();
+                    System.out.println();
                     i++;
             }
         
             // Print content of Register File
             System.out.println("Register File:");
             for (RegisterFile reg : RegisterFile) {
-                System.out.println(reg.toString());
+                reg.print();
+                System.out.println();
             }
         
             // Print content of Memory
@@ -648,12 +672,12 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         
             // Print content of Common Data Bus
             System.out.println("Common Data Bus:");
-            System.out.println(CDB.toString());
+            CDB.print();
         
             // Print current instruction being issued
             if (pc < currInstructions.size()) {
                 Instruction currentInstruction = (Instruction) currInstructions.get(pc);
-                System.out.println("Current Instruction: " + currentInstruction.toString());
+                System.out.println("Current Instruction: " + currentInstruction.instructionString);
             }
         
             // Print instructionsToWrite
@@ -676,14 +700,14 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
        
         //TODO gui for this , input and output
         int mulLatency=6;
-        int loadLatency=1;
+        int loadLatency=2;
         int storeLatency=1;
-        int divLatency=1;
-        int subLatency=1;
-        int addLatency=6;
+        int divLatency=40;
+        int subLatency=2;
+        int addLatency=4;
         int memorySize=15;
-        int adderSize=2;
-        int registerSize=15;
+        int adderSize=3;
+        int registerSize=12;
         int multiplierSize=2;
         int loadSize=3;
         int storeSize=3;
@@ -692,8 +716,22 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         
         Microprocessor microprocessor=new Microprocessor(adderSize,multiplierSize,loadSize,storeSize,registerSize,memorySize);
         loadInstructions(microprocessor,latencies);
-       
+       RegisterFile[1].value=1;
+       RegisterFile[2].value=2;
+       RegisterFile[4].value=3;
+       RegisterFile[6].value=4;
+       RegisterFile[8].value=5;
+       RegisterFile[9].value=6;
+
+       Memory[1]=1;
+       Memory[2]=2;
+       Memory[4]=3;
+       Memory[6]=4;
+       Memory[8]=5;
+       Memory[9]=6;
+
         int end=instructions.size();
+        System.out.println("end is "+end);
         while (pc<end) {
           //  checkCleanup();
             print(pc, clockCycle);
@@ -706,7 +744,6 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
                  execute((Instruction)ins);
              }
              write();
-             
              pc++;
             //checkCleanup(); //should update buffers and stations and cdb ig and remove from arraylist instructions?
             clockCycle++;
