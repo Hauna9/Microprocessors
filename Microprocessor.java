@@ -969,7 +969,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         int subLatency=4;
         int addLatency=4;
 
-        int registerSize=64;
+        int registerSize=17;
         int memorySize=7;
 
         int adderSize=3;
@@ -985,7 +985,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
        
 
       Memory[1]=1;
-       Memory[2]=2;
+      Memory[2]=2;
     RegisterFile[1].value=  1;
     RegisterFile[2].value=  2;
     RegisterFile[4].value=  3;
@@ -994,10 +994,10 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
     RegisterFile[9].value=  6;
 
     //RegisterFile[20].value=  3;
-    // RegisterFile[15].value=10;
-    // RegisterFile[2].value=3;
-    // RegisterFile[4].value=1;
-   // RegisterFile[16].value=10;
+//     RegisterFile[15].value=15;
+//     RegisterFile[2].value=3;
+//     RegisterFile[4].value=1;
+//    RegisterFile[16].value=10;
 
 
         int end=instructions.size();
@@ -1007,7 +1007,36 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
         while (!allStationsEmpty() || pc<end ) {
             
             if(pc<end)
-            {Instruction instruction=(Instruction) instructions.get(pc);
+            {Instruction instruction= new Instruction();
+                {
+                    instruction.instructionType=((Instruction)instructions.get(pc)).instructionType;
+                    instruction.destinationRegister= ((Instruction)instructions.get(pc)).destinationRegister;
+                    instruction.j=((Instruction)instructions.get(pc)).j;
+                    instruction.k=((Instruction)instructions.get(pc)).k;
+                    instruction.effectiveAddress=((Instruction)instructions.get(pc)).effectiveAddress;
+                    instruction.immediate=((Instruction)instructions.get(pc)).immediate;
+                    instruction.issued=((Instruction)instructions.get(pc)).issued;
+                    instruction.issueCycle=((Instruction)instructions.get(pc)).issueCycle;
+                    instruction.executeStartCycle=((Instruction)instructions.get(pc)).executeStartCycle;
+                    instruction.executeEndCycle=((Instruction)instructions.get(pc)).executeEndCycle;
+                    instruction.jumpInstructionNumber=((Instruction)instructions.get(pc)).jumpInstructionNumber;
+                    instruction.executed=((Instruction)instructions.get(pc)).executed;
+                    instruction.duration=((Instruction)instructions.get(pc)).duration;
+                    instruction.position=((Instruction)instructions.get(pc)).position;
+                    instruction.written=((Instruction)instructions.get(pc)).written;
+                    instruction.finished=((Instruction)instructions.get(pc)).finished;
+                    instruction.result=((Instruction)instructions.get(pc)).result;
+                    instruction.tag=((Instruction)instructions.get(pc)).tag;
+                    instruction.instructionString=((Instruction)instructions.get(pc)).instructionString;
+                   
+
+
+
+
+
+
+
+                }
                 System.out.println("Instruction to be issued: " + instruction.instructionString + " " + instruction.issued);
             if( !instruction.issued && !stallBranch)
                 {issue(instruction);
@@ -1028,6 +1057,11 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
              //System.out.println("Instruction to write size : " + instructionsToWrite.size());
             print(pc, clockCycle);
             clockCycle++;
+
+            if(clockCycle==15)
+            break;
+
+            
             
             
 

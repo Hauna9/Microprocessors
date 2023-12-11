@@ -78,6 +78,10 @@ public class Instruction {
         this.instructionString=data;
 
     }
+    public Instruction()
+    {
+        
+    }
 
    
 
