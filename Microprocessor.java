@@ -962,14 +962,14 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
            // for(int i=0;)
        
         //TODO gui for this , input and output
-        int mulLatency=4;
+        int mulLatency=6;
         int loadLatency=1;
         int storeLatency=1;
         int divLatency=4;
         int subLatency=4;
         int addLatency=4;
 
-        int registerSize=20;
+        int registerSize=64;
         int memorySize=7;
 
         int adderSize=3;
@@ -984,19 +984,19 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
        
        
 
-      // Memory[1]=1;
+      Memory[1]=1;
        Memory[2]=2;
-    // RegisterFile[1].value=  1;
-    // RegisterFile[2].value=  2;
-    // RegisterFile[4].value=  3;
-    // RegisterFile[6].value=  4;
-    // RegisterFile[8].value=  5;
-    // RegisterFile[9].value=  6;
+    RegisterFile[1].value=  1;
+    RegisterFile[2].value=  2;
+    RegisterFile[4].value=  3;
+    RegisterFile[6].value=  4;
+    RegisterFile[8].value=  5;
+    RegisterFile[9].value=  6;
 
     //RegisterFile[20].value=  3;
-    RegisterFile[15].value=10;
-    RegisterFile[2].value=3;
-    RegisterFile[4].value=1;
+    // RegisterFile[15].value=10;
+    // RegisterFile[2].value=3;
+    // RegisterFile[4].value=1;
    // RegisterFile[16].value=10;
 
 
@@ -1029,8 +1029,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             print(pc, clockCycle);
             clockCycle++;
             
-            if(clockCycle==12)
-               break;
+            
 
             
             
