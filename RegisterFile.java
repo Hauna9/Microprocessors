@@ -8,7 +8,7 @@ public class RegisterFile {
     public RegisterFile() {
         this.busy = 0;
         this.tag = ""; //if tag isnt empty then there is an instruction awaiin value
-        this.value = -1;
+        this.value = 0;
     }
 
     public void print()

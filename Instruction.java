@@ -158,5 +158,42 @@ public class Instruction {
     
     }
 
+    public int setDurationAgain()
+    {
+        switch(instructionType)
+        {
+            case LD:
+                return loadLatency;
+                
+            case SD:
+                return storeLatency;
+                
+            case ADD:
+                return addLatency;
+                
+            case SUB:
+                return subLatency;
+                
+            case SUBI:
+                return subiLatency;
+                    
+            case MUL:
+                return mulLatency;
+                
+            case DIV:
+                return divLatency;
+                
+            case ADDI:
+                return addiLatency;
+                
+            case BNEZ:
+                return bnezLatency;
+                
+            default:
+                return 0;
+        }
+    }
+
+
 
 }
