@@ -5,7 +5,6 @@ public class Buffer {
     int startCycle;
     int duration;
     int executeEndCycle;
-    //FIXME add address?
     boolean readyToWrite;
     Instruction instruction;
 

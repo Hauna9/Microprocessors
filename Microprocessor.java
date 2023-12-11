@@ -1,40 +1,4 @@
-/*
 
-as about if cant issue, do we stall all? --> we do not issue it but we do not stall all
-Skeleton:
-
-
-checks for cleanup 
-
-
-
-issue
-
-    checks:  (instuction buffer) (after cleaning up buffers etc)
-     if instruction is valid
-        if buffer is full (is there strucutal hazard) 
-            is there empty reservation stayion  (according to type)
-            
-            every instruction has boolean issued, if it is 1, we have boolean execstart, if it is false we set it to true, and set clock cycle
-    attrbutes of exec beginning to the current clock cycle
-    if issued and if exec staart, we decrement the remaining clocks for the duration
-    if after decrementing it is 0, we remove it from thw station and sert the end exec cycle, and set exec done to true
-    anything that has exec done to true we do the b: if it is 0, we check what else is 0 or add it ao anrray and handle which one to write back
-       
-        if instruction is ready to be issued  (remove from instruction queue ig)
-       when issuing:
-       initlaise issue number with thwe clock cycle
-         set the reservation station to busy, update address //FIXME : check if we need to update address 
-         register file initliase Q(i) to tag if the reservarion station
-         
-       TODO go through vod 12 and 13 for load and store buffers, and the loop examples
-
-
-
-    
- 
- */
-//queue instructions; //FIXME make it queue?
 
 import java.util.*;
 import java.io.*;
@@ -50,7 +14,7 @@ public class Microprocessor {
     static ReservationStation[] Multiplier;
     static Buffer[] Load;
     static Buffer[] Store;
-    static RegisterFile[] RegisterFile; // reg number is the position;//FIXME make it even? and value , default is 0
+    static RegisterFile[] RegisterFile; // reg number is the position
     static CommonDataBus CDB; // one value has tag, the other has the actual value
     static double[] Memory;
     static boolean stall=false;
@@ -76,7 +40,7 @@ public class Microprocessor {
     
 
 
-    CDB = new CommonDataBus(); //FIXME do the constructor
+    CDB = new CommonDataBus(); 
     Memory = new double[memorySize];
     
        
@@ -157,9 +121,11 @@ public class Microprocessor {
         }
          }
     else{
-            
+            if(instruction.duration>0)
+            {
         instruction.duration--;
          updateDurationInStation(instruction);
+            }
 
         if(instruction.duration <= 0)
         {
@@ -231,8 +197,12 @@ public class Microprocessor {
         }
          }
     else{
+
+        if(instruction.duration>0)
+        {
             instruction.duration--;
             updateDurationInStation(instruction);
+        }
 
         if(instruction.duration == 0)
         {
@@ -260,8 +230,11 @@ public class Microprocessor {
         }
          }
     else{
+        if(instruction.duration>0)
+        {
             instruction.duration--;
             updateDurationInStation(instruction);
+        }
 
         if(instruction.duration == 0)
         {
@@ -286,20 +259,20 @@ public class Microprocessor {
             //FIXME bnez??
             case ADD: case SUB: case ADDI: case SUBI: case BNEZ:  //FIXME bnez here?
                 Adder[instruction.position].startCycle = clockCycle;
-                Adder[instruction.position].executeEndCycle = clockCycle + instruction.duration -1 ;
+                Adder[instruction.position].executeEndCycle = clockCycle + instruction.duration  ;
                 break;
             case MUL: case DIV: 
                 Multiplier[instruction.position].startCycle = clockCycle;
-                Multiplier[instruction.position].executeEndCycle = clockCycle + instruction.duration -1 ;
+                Multiplier[instruction.position].executeEndCycle = clockCycle + instruction.duration  ;
 
                 break;
             case LD:
                 Load[instruction.position].startCycle = clockCycle;
-                Load[instruction.position].executeEndCycle = clockCycle + instruction.duration -1 ;
+                Load[instruction.position].executeEndCycle = clockCycle + instruction.duration  ;
                 break;
             case SD:
                 Store[instruction.position].startCycle = clockCycle;
-                Store[instruction.position].executeEndCycle = clockCycle + instruction.duration -1 ;
+                Store[instruction.position].executeEndCycle = clockCycle + instruction.duration  ;
                 break;
             default: 
                 break;
@@ -380,18 +353,19 @@ public class Microprocessor {
                 instruction.result = Float.parseFloat(Multiplier[instruction.position].vj) / Float.parseFloat(Multiplier[instruction.position].vk);
                 Multiplier[instruction.position].readyToWrite = true;
                 break;
-            case LD: //FIXME this is in writeback
+            case LD: 
                // RegisterFile[instruction.destinationRegister].value = Memory[instruction.effectiveAddress];
                 Load[instruction.position].readyToWrite = true;
                 System.out.println("Made load read to write");
-            case SD://FIXME this is in writeback
+                break;
+            case SD:
                  Memory[instruction.effectiveAddress] = RegisterFile[instruction.destinationRegister].value;
                  
                 break;
             case BNEZ: //TODO bnez??
                 if(RegisterFile[instruction.destinationRegister].busy == 0)
                 {
-                  if(Memory[instruction.destinationRegister] != 0)
+                  if(RegisterFile[instruction.destinationRegister].value != 0)
                   {
                     pc=0;
                   }
@@ -406,7 +380,6 @@ public class Microprocessor {
    
    public static void write()
    {
-    //FIXME do i need this? if(instruction.executed && !instruction.written)
     {
 
        if(instructionsToWrite.isEmpty())
@@ -423,7 +396,7 @@ public class Microprocessor {
                 {stallBranch=false;}
             writeInstruction(instructionToWrite);
             System.out.println("Instruction to be written: " + instructionToWrite.instructionString);
-            instructionsToWrite.poll(); //FIXME print
+            instructionsToWrite.poll(); 
             
         }
        }
@@ -476,21 +449,14 @@ public class Microprocessor {
             buffer[position].instruction=null;
             buffer[position].executeEndCycle=-1;
             buffer[position].duration=-1;
-       //buffer[position].readyToWrite = false; //FIXME?
    }
 
    public static void writeInstruction(Instruction instruction)
    {
-         //FIXME write to CDB
-         
-         //FIXME update finished
-         //FIXME update tags in both
-         //FIXME empty reservation station (method to empty in buffr and reservation station)
-         //check me updates reservations buffers with the new balues
-         //FIXME check -1 etc or that handled above?
+        
         
         instruction.written=true;
-        instruction.finished=true; //FIXME redundant? also handle prints
+        instruction.finished=true; 
         //instructionsToWrite.remove(instruction);
        // currInstructions.remove(instruction); 
           switch(instruction.instructionType)
@@ -498,7 +464,7 @@ public class Microprocessor {
             case ADD: case SUB: case ADDI: case SUBI:  //FIXME bnez here?
                 if(Adder[instruction.position].readyToWrite)
                 {
-                    //FIXME write to CDB
+                  
                     CDB.tag = Adder[instruction.position].tag;
                     CDB.value = instruction.result + "";
                     emptyReservationStation(Adder, instruction.position);
@@ -508,7 +474,7 @@ public class Microprocessor {
             case MUL: case DIV: 
                 if(Multiplier[instruction.position].readyToWrite)
                 {
-                    //FIXME write to CDB
+                  
                     CDB.tag = Multiplier[instruction.position].tag;
                     CDB.value = instruction.result +"";
                     emptyReservationStation(Multiplier, instruction.position);
@@ -518,9 +484,10 @@ public class Microprocessor {
             case LD:
                 if(Load[instruction.position].readyToWrite)
                 {
-                    //FIXME write to CDB
+                  
                     CDB.tag = Load[instruction.position].tag;
                     CDB.value = Memory[instruction.effectiveAddress] + "";
+                    System.out.println("Value of memory is: " + Memory[instruction.effectiveAddress] + " and effective address is: " + instruction.effectiveAddress);
                     RegisterFile[instruction.destinationRegister].value = Memory[instruction.effectiveAddress];
                     emptyBuffer(Load, instruction.position);
                     instruction.written = true;
@@ -647,7 +614,6 @@ public class Microprocessor {
             }
             else
             { //register value is not available so we add the reg tag of the reservation station then
-                //TODO use the tags in the reservation station to find the values from reg file
                 reservationStation[position].qj = RegisterFile[j].tag;
                 reservationStation[position].vj = "";
             }
@@ -667,12 +633,11 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
  {
             if(RegisterFile[j].busy == 0)
             {  //register value is available
-                reservationStation[position].vj =Memory[j] + "";
+                reservationStation[position].vj =RegisterFile[j].value + "";
                 reservationStation[position].qj = "";
             }
             else
             { //register value is not available so we add the reg tag of the reservation station then
-                //TODO use the tags in the reservation station to find the values from reg file
                 reservationStation[position].qj = RegisterFile[j].tag;
                 reservationStation[position].vj = "";
             }
@@ -686,11 +651,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
     public static void issueInstruction(Instruction instruction)
         {
             int position = reservationStation(instruction);
-            // if(position ==-1)
-            // {
-            //     //FIXME if -1 we stall only right?
-            //     return; 
-            // }
+            
             switch(instruction.instructionType)
             {
                 case ADD: case SUB:   //FIXME bnez here?
@@ -699,7 +660,6 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
                     Adder[position].duration = instruction.duration ;
                     Adder[position].instruction=instruction;
                     checkAvailability(instruction.j, instruction.k, Adder, position);
-                    //FIXME what if the reg file busy of that reg was 1?
                     RegisterFile[instruction.destinationRegister].busy = 1;
                     RegisterFile[instruction.destinationRegister].tag = Adder[position].tag;
                     instruction.tag = Adder[position].tag;
@@ -711,7 +671,6 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
                     Multiplier[position].duration = instruction.duration ;
                     Multiplier[position].instruction=instruction;
                    checkAvailability(instruction.j, instruction.k, Multiplier, position);
-                    //FIXME what if the reg file busy of that reg was 1?
                     RegisterFile[instruction.destinationRegister].busy = 1;
                     RegisterFile[instruction.destinationRegister].tag = Multiplier[position].tag;
                     instruction.tag = Multiplier[position].tag;
@@ -764,19 +723,18 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             instruction.issued=true;
             instruction.issueCycle=clockCycle;
             System.out.println("Issue cycle of " + instruction.instructionString + " is " + instruction.issueCycle);
-            instruction.position=position; //FIXME do we need this?
+            instruction.position=position; 
         }
 
         public static void checkAvailabilityBranch(int destinationRegister , ReservationStation[] reservationStation, int position)
         {
             if(RegisterFile[destinationRegister].busy == 0)
             {  //register value is available
-                reservationStation[position].vj =Memory[destinationRegister] + "";
+                reservationStation[position].vj =RegisterFile[destinationRegister].value + "";
                 reservationStation[position].qj = "";
             }
             else
             { //register value is not available so we add the reg tag of the reservation station then
-                //TODO use the tags in the reservation station to find the values from reg file
                 reservationStation[position].qj = RegisterFile[destinationRegister].tag;
                 reservationStation[position].vj = "";
             }
@@ -857,6 +815,9 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
                     System.out.println("Load buffer position"+ i+": " );
                     buffer.print();
                     System.out.println();
+                    // Instruction instruction=buffer.instruction;
+                    // if(instruction!=null)
+                    // System.out.println("instruction duration inside instruction : " +buffer.instruction.duration);
                     i++;
             }
             System.out.println("Store Buffers:");
@@ -961,20 +922,20 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
            // for(int i=0;)
        
         //TODO gui for this , input and output
-        int mulLatency=3;
+        int mulLatency=4;
         int loadLatency=1;
         int storeLatency=1;
-        int divLatency=40;
-        int subLatency=2;
-        int addLatency=2;
+        int divLatency=4;
+        int subLatency=4;
+        int addLatency=4;
 
-        int registerSize=21;
+        int registerSize=20;
         int memorySize=7;
 
-        int adderSize=2;
+        int adderSize=3;
         int multiplierSize=2;
-        int loadSize=2;
-        int storeSize=2;
+        int loadSize=3;
+        int storeSize=3;
         int latencies[]={addLatency,subLatency,mulLatency,divLatency,loadLatency,storeLatency};
 
         
@@ -983,7 +944,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
        
        
 
-       Memory[1]=1;
+      // Memory[1]=1;
        Memory[2]=2;
     // RegisterFile[1].value=  1;
     // RegisterFile[2].value=  2;
@@ -991,7 +952,11 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
     // RegisterFile[6].value=  4;
     // RegisterFile[8].value=  5;
     // RegisterFile[9].value=  6;
-    RegisterFile[20].value=  3;
+
+    //RegisterFile[20].value=  3;
+    RegisterFile[15].value=5;
+    RegisterFile[2].value=3;
+   // RegisterFile[16].value=10;
 
 
         int end=instructions.size();
@@ -1023,8 +988,8 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             print(pc, clockCycle);
             clockCycle++;
             
-            if(clockCycle==11)
-               break;
+            // if(clockCycle==11)
+            //    break;
 
             
             

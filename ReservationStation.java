@@ -2,20 +2,20 @@ public class ReservationStation {
     
     int startCycle;
     int busy;
-    InstructionType instructionType; //FIXME how to limit only the correct or just keep it to the calling?
+    InstructionType instructionType; 
     String vj;
     String vk;
     String qj;
     String qk;
     String A;
-    String tag; //FIXME make this tag a string?
+    String tag; 
     boolean readyToWrite;
     int duration;
     int executeEndCycle;
     Instruction instruction;
 
     public ReservationStation(String tagCharacter, int duration) {
-        this.startCycle = -1; //FIXME is this needed?
+        this.startCycle = -1; 
         this.busy = 0;
         this.instructionType = null;
         this.vj = "";

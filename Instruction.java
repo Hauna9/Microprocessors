@@ -11,10 +11,9 @@ public class Instruction {
     int executeStartCycle;
     int executeEndCycle;
     int jumpInstructionNumber; //for bnez
-    //TODO initialise the cycle length depending on the instruction type
     boolean executed;
     int duration; // (based on instruction type ; switch case)
-    int position; //the position in the buffer //FIXME also buffer name?
+    int position; //the position in the buffer 
     boolean written;
     boolean finished;
     float result;
@@ -23,15 +22,15 @@ public class Instruction {
 
 
 
-    // LD F2 0(R1)   //TODO handle the register number and the extraction of brackets
-    // SD F2 -5(R1) //TODO handle -ve..?
+    // LD F2 0(R1)   
+    // SD F2 -5(R1)
     // MUL F4 F2 F0
     // ADD F6 F4 F8
     // SUB F10 F6 F12
     // DIV F14 F10 F16
-    // ADDI F18 F14 4 //TODO handle the immediate value
+    // ADDI F18 F14 4 
     // SUBI F20 F18 4
-    // BNEZ F22 10 //TODO handle the branch to instruction number
+    // BNEZ F22 10 
 
 
     //latencies
@@ -69,7 +68,6 @@ public class Instruction {
         this.position = -1;
         this.destinationRegister= Integer.parseInt(words[1].substring(1)); // extract the register number
         //bnez reg number to check
-        //FIXME set the latencies
         
         this.written=false;
         this.finished=false;
@@ -101,7 +99,7 @@ public class Instruction {
                     this.immediate=Integer.parseInt(words[3]); // extract the register number
                     break;
                 case "BNEZ":
-                    this.jumpInstructionNumber=Integer.parseInt(words[2]); // extract the register number
+                  //  this.jumpInstructionNumber=Integer.parseInt(words[2]); // extract the register number
                     // this.j=words[1].substring(1); // extract the register number
                     // this.jump=Integer.parseInt(words[2]);
                     // this.regToJump=Integer.parseInt(words[3].substring(1));
