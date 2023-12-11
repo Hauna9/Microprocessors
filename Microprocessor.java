@@ -52,7 +52,7 @@ public class Microprocessor {
     static Buffer[] Store;
     static RegisterFile[] RegisterFile; // reg number is the position;//FIXME make it even? and value , default is 0
     static CommonDataBus CDB; // one value has tag, the other has the actual value
-    static float[] Memory;
+    static double[] Memory;
     static boolean stall=false;
     static boolean stallBranch=false;
     static int pc=0;
@@ -77,21 +77,10 @@ public class Microprocessor {
 
 
     CDB = new CommonDataBus(); //FIXME do the constructor
-    Memory = new float[memorySize];
+    Memory = new double[memorySize];
     
-       RegisterFile[1].value=1;
-       RegisterFile[2].value=2;
-       RegisterFile[4].value=3;
-       RegisterFile[6].value=4;
-       RegisterFile[8].value=5;
-       RegisterFile[9].value=6;
-
-       Memory[1]=1;
-       Memory[2]=2;
-       Memory[4]=3;
-       Memory[6]=4;
-       Memory[8]=5;
-       Memory[9]=6;
+       
+       
 
    }
 
@@ -168,10 +157,11 @@ public class Microprocessor {
         }
          }
     else{
-            instruction.duration--;
-            updateDurationInStation(instruction);
+            
+        instruction.duration--;
+         updateDurationInStation(instruction);
 
-        if(instruction.duration == 0)
+        if(instruction.duration <= 0)
         {
             instruction.executed = true;
             instruction.executeEndCycle = clockCycle;
@@ -381,17 +371,7 @@ public class Microprocessor {
                 instruction.result = Float.parseFloat(Adder[instruction.position].vj) - instruction.immediate;
                 Adder[instruction.position].readyToWrite = true;
                 break; 
-            case BNEZ: //TODO bnez??
-                if(RegisterFile[instruction.destinationRegister].busy == 0)
-                {
-                  if(Memory[instruction.destinationRegister] != 0)
-                  {
-                    pc=0;
-                  }
-                  Adder[instruction.position].readyToWrite = true;
-                  
-                }
-            break;
+            
             case MUL:
                 instruction.result = Float.parseFloat(Multiplier[instruction.position].vj) * Float.parseFloat(Multiplier[instruction.position].vk);
                 Multiplier[instruction.position].readyToWrite = true;
@@ -403,10 +383,22 @@ public class Microprocessor {
             case LD: //FIXME this is in writeback
                // RegisterFile[instruction.destinationRegister].value = Memory[instruction.effectiveAddress];
                 Load[instruction.position].readyToWrite = true;
+                System.out.println("Made load read to write");
             case SD://FIXME this is in writeback
                  Memory[instruction.effectiveAddress] = RegisterFile[instruction.destinationRegister].value;
                  
                 break;
+            case BNEZ: //TODO bnez??
+                if(RegisterFile[instruction.destinationRegister].busy == 0)
+                {
+                  if(Memory[instruction.destinationRegister] != 0)
+                  {
+                    pc=0;
+                  }
+                  Adder[instruction.position].readyToWrite = true;
+                  
+                }
+            break;
             default: 
                 break;
         }
@@ -529,6 +521,7 @@ public class Microprocessor {
                     //FIXME write to CDB
                     CDB.tag = Load[instruction.position].tag;
                     CDB.value = Memory[instruction.effectiveAddress] + "";
+                    RegisterFile[instruction.destinationRegister].value = Memory[instruction.effectiveAddress];
                     emptyBuffer(Load, instruction.position);
                     instruction.written = true;
                 }
@@ -649,7 +642,7 @@ public class Microprocessor {
         {
             if(RegisterFile[j].busy == 0)
             {  //register value is available
-                reservationStation[position].vj = Memory[j] + "";
+                reservationStation[position].vj = RegisterFile[j].value + "";
                 reservationStation[position].qj = "";
             }
             else
@@ -660,7 +653,7 @@ public class Microprocessor {
             }
             if(RegisterFile[k].busy == 0)
             {
-                reservationStation[position].vk = Memory[k] + "";
+                reservationStation[position].vk = RegisterFile[k].value + "";
                 reservationStation[position].qk = "";
             }
             else
@@ -889,7 +882,7 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             // Print content of Memory
             i=0;
             System.out.println("Memory:");
-            for (float mem : Memory) {
+            for (double mem : Memory) {
                 System.out.print("M"+i+": " );
                 System.out.println(mem);
                 i++;
@@ -968,24 +961,38 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
            // for(int i=0;)
        
         //TODO gui for this , input and output
-        int mulLatency=6;
-        int loadLatency=2;
+        int mulLatency=3;
+        int loadLatency=1;
         int storeLatency=1;
         int divLatency=40;
         int subLatency=2;
-        int addLatency=4;
-        int memorySize=15;
-        int adderSize=3;
-        int registerSize=15;
+        int addLatency=2;
+
+        int registerSize=21;
+        int memorySize=7;
+
+        int adderSize=2;
         int multiplierSize=2;
-        int loadSize=3;
-        int storeSize=3;
+        int loadSize=2;
+        int storeSize=2;
         int latencies[]={addLatency,subLatency,mulLatency,divLatency,loadLatency,storeLatency};
 
         
         Microprocessor microprocessor=new Microprocessor(adderSize,multiplierSize,loadSize,storeSize,registerSize,memorySize);
         loadInstructions(microprocessor,latencies);
        
+       
+
+       Memory[1]=1;
+       Memory[2]=2;
+    // RegisterFile[1].value=  1;
+    // RegisterFile[2].value=  2;
+    // RegisterFile[4].value=  3;
+    // RegisterFile[6].value=  4;
+    // RegisterFile[8].value=  5;
+    // RegisterFile[9].value=  6;
+    RegisterFile[20].value=  3;
+
 
         int end=instructions.size();
         System.out.println("end is "+end);
@@ -1016,7 +1023,8 @@ public static void checkAvailabilityImmediate(int j, int immediate, ReservationS
             print(pc, clockCycle);
             clockCycle++;
             
-            
+            if(clockCycle==11)
+               break;
 
             
             

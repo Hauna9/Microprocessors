@@ -3,7 +3,7 @@ public class RegisterFile {
     
     int busy=0;
     String tag;
-    float value;
+    double value;
 
     public RegisterFile() {
         this.busy = 0;
